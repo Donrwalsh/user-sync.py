@@ -45,6 +45,11 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
+.pytest_cache
+user_sync/connector-ldap.yml
+user_sync/connector-umapi.yml
+user_sync/private.key
+user_sync/user-sync-config.yml
 
 # Translations
 *.mo
