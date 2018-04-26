@@ -1,4 +1,5 @@
 import unittest
+import itertools
 
 from user_sync.config import ObjectConfig
 
@@ -58,3 +59,20 @@ class ObjectConfigTest(unittest.TestCase):
 
         self.assert_eq(self.test_object_primary.find_child_config(self.secondary_scope), self.test_object_secondary,
                        "find_child_configs should only return one object even if there are more than one valid children")
+
+    def test_iter_configs(self):
+        for object_config in self.test_object_primary.iter_configs():
+            self.assert_eq(object_config, self.test_object_primary,
+                           "iter_configs() of an object config with no hierarchy should only return itself")
+
+        self.test_object_primary.add_child(self.test_object_secondary)
+        self.test_object_primary.add_child(self.test_object_secondary)
+
+        for object_config in itertools.islice(self.test_object_primary.iter_configs(), 1):
+            self.assert_eq(object_config, self.test_object_primary,
+                           "iter_configs() of an object config with children should return itself in first position")
+
+        for object_config in itertools.islice(self.test_object_primary.iter_configs(), 1, 3):
+            self.assert_eq(object_config, self.test_object_secondary,
+                           "iter_configs() of an object config with children should contain those children")
+
