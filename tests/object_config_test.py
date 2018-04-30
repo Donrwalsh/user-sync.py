@@ -1,6 +1,8 @@
 import unittest
+from unittest.mock import patch
 import itertools
 import six
+import logging
 
 import mock
 
@@ -108,3 +110,44 @@ class ObjectConfigTest(unittest.TestCase):
                            'python 3 should describe lists as list')
             self.assert_eq(self.test_object_primary.describe_types((int, bool, tuple)), ['int', 'bool', 'tuple'],
                            'python 3 should describe multiple types in an ordered list')
+
+    @patch.object(ObjectConfig, "describe_unused_values")
+    @patch.object(ObjectConfig, "iter_configs")
+    def test_report_unused_values(self, iter_configs_mock, describe_unused_values_mock):
+        return_configs = {self.test_object_secondary}
+        iter_configs_mock.return_value = return_configs
+        m_logger = mock.Mock()
+
+        # The core ObjectConfig should never log with this method as describe_unused_values returns nothing
+        self.test_object_primary.report_unused_values(m_logger)
+        m_logger.assert_not_called()
+
+        describe_unused_values_mock.return_value = "key_not_in_optional_configs"
+        try:
+            self.test_object_primary.report_unused_values(m_logger)
+        except AssertionException:
+            m_logger.log.assert_called_with(logging.ERROR, 'key_not_in_optional_configs')
+            pass
+        else:
+            self.fail("An AssertionException should be raised if an unused key is not present in optional_configs")
+
+        describe_unused_values_mock.return_value = "key_in_optional_configs"
+        try:
+            self.test_object_primary.report_unused_values(m_logger, [self.test_object_secondary])
+        except AssertionException:
+            self.fail("An AssertionException should not be raised if an unused key is present in optional configs")
+        else:
+            m_logger.log.assert_called_with(logging.WARNING, 'key_in_optional_configs')
+            pass
+
+    def test_describe_unused_values(self):
+        self.assert_eq(self.test_object_primary.describe_unused_values(), [],
+                       "This method should return an empty list")
+
+
+
+
+
+
+
+
