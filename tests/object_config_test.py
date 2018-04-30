@@ -1,7 +1,11 @@
 import unittest
 import itertools
+import six
+
+import mock
 
 from user_sync.config import ObjectConfig
+from user_sync.error import AssertionException
 
 
 class ObjectConfigTest(unittest.TestCase):
@@ -76,3 +80,31 @@ class ObjectConfigTest(unittest.TestCase):
             self.assert_eq(object_config, self.test_object_secondary,
                            "iter_configs() of an object config with children should contain those children")
 
+    def test_get_full_scope(self):
+        self.test_object_primary.add_child(self.test_object_secondary)
+
+        self.assert_eq(self.test_object_secondary.get_full_scope(), "primary.secondary",
+                       "child object's full scope should include parent and child")
+        self.assert_eq(self.test_object_primary.get_full_scope(), "primary",
+                       "parent object's full scope should only include self")
+
+    def test_create_assertion_error(self):
+        try:
+            raise self.test_object_primary.create_assertion_error('Something went wrong')
+        except AssertionException:
+            pass
+        except Exception as e:
+            self.fail('Unexpected exception raised:', e)
+
+    def test_describe_types(self):
+        if six.PY3:
+            self.assert_eq(self.test_object_primary.describe_types(str), ['str'],
+                           'python 3 should describe strings as str')
+            self.assert_eq(self.test_object_primary.describe_types(six.string_types), ['str'],
+                           'python 3 should describe six.string_types as str')
+            self.assert_eq(self.test_object_primary.describe_types(dict), ['dict'],
+                           'python 3 should describe dictionaries as dict')
+            self.assert_eq(self.test_object_primary.describe_types(list), ['list'],
+                           'python 3 should describe lists as list')
+            self.assert_eq(self.test_object_primary.describe_types((int, bool, tuple)), ['int', 'bool', 'tuple'],
+                           'python 3 should describe multiple types in an ordered list')
