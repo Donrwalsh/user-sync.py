@@ -69,6 +69,22 @@ class ListConfigTest(unittest.TestCase):
         self.util.assert_isSubclass(self.test_object_primary.__class__, ObjectConfig,
                                     "ListConfig objects should be children of ObjectConfig")
 
+    def test_iter_values(self):
+        try:
+            list(self.test_object_primary.iter_values(dict))
+        except AssertionException:
+            pass
+        else:
+            self.fail("An Assertion Exception should be raised when value type does not conform to allowed types")
+
+        self.util.assert_eq(list(self.test_object_primary.iter_values(str)), self.primary_values,
+                            "iter values should list all values when they match allowed_type")
+
+    # @patch.object(ListConfig, "iter_values(dict)")
+    # def test_iter_dict_configs(self, iter_values_mock):
+    #     iter_values_mock.return_value = {'one': 1, 'two': 2, 'three': 3}
+    #     print(self.test_object_primary.iter_values())
+
 
 class ObjectConfigTest(unittest.TestCase):
 
@@ -174,7 +190,7 @@ class ObjectConfigTest(unittest.TestCase):
         self.test_object_primary.report_unused_values(m_logger)
         m_logger.assert_not_called()
 
-        describe_unused_values_mock.return_value = "key_not_in_optional_configs"
+        describe_unused_values_mock.return_value = ["key_not_in_optional_configs"]
         try:
             self.test_object_primary.report_unused_values(m_logger)
         except AssertionException:
@@ -183,7 +199,7 @@ class ObjectConfigTest(unittest.TestCase):
         else:
             self.fail("An AssertionException should be raised if an unused key is not present in optional_configs")
 
-        describe_unused_values_mock.return_value = "key_in_optional_configs"
+        describe_unused_values_mock.return_value = ["key_in_optional_configs"]
         try:
             self.test_object_primary.report_unused_values(m_logger,
                                                           [self.test_object_primary, self.test_object_secondary])
